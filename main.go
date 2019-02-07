@@ -1,13 +1,10 @@
 package main
 
 import (
+	"./nicoSearch"
 	"./sendSlack"
-	"encoding/json"
-	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/mmcdole/gofeed"
-	"io/ioutil"
-	"net/http"
 )
 
 type Config struct {
@@ -19,22 +16,6 @@ type HooksConfig struct {
 }
 type NicosConfig struct {
 	SearchUrl string
-}
-
-type NicoSearchResult struct {
-	Meta Status
-	Data []SearchResult
-}
-type Status struct {
-	status     int
-	totalCount int
-	id         string
-}
-type SearchResult struct {
-	Title         string
-	ContentId     string
-	ViewCounter   int
-	MylistCounter int
 }
 
 func main() {
@@ -49,27 +30,8 @@ func postNicoSearch() {
 	if err != nil {
 		panic(err)
 	}
-	resp, err := http.Get(config.Nicos.SearchUrl)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	text := nicoSearch.GetNicoSearchResultText(config.Nicos.SearchUrl)
 
-	defer resp.Body.Close()
-
-	body, er := ioutil.ReadAll(resp.Body)
-	if er != nil {
-		fmt.Println(err)
-		return
-	}
-
-	var n NicoSearchResult
-	json.Unmarshal(body, &n)
-	text := ""
-	for _, nr := range n.Data[0:10] {
-		url := "https://www.nicovideo.jp/watch/" + nr.ContentId
-		text += nr.Title + "\n" + url + "\n"
-	}
 	slack := &sendSlack.SlackMsg{Name: "Hook君", Text: text, Channel: "general", Url: config.Hooks.Url}
 	slack.PostToHookUrl()
 }
