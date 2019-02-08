@@ -19,11 +19,9 @@ type NicosConfig struct {
 }
 
 func main() {
-	postNicoSearch()
+	// postNicoSearch()
 }
 
-// TODO: パッケージを分ける。
-// TODO: 検索ワードだけは別途入力分けする。
 func postNicoSearch() {
 	var config Config
 	_, err := toml.DecodeFile("config.tml", &config)
