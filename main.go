@@ -39,7 +39,10 @@ func postNicoSearch() {
 	var config Config
 	_, err := toml.DecodeFile("config.tml", &config)
 	if err != nil {
-		panic(err)
+		_, err := toml.DecodeFile("~/.config/slackbot-rss/config.tml", &config)
+		if err != nil {
+			panic(err)
+		}
 	}
 	text := nicoSearch.GetNicoSearchResultText(config.Nicos.SearchUrl)
 
@@ -50,7 +53,10 @@ func postHatenaRss() {
 	var config Config
 	_, err := toml.DecodeFile("config.tml", &config)
 	if err != nil {
-		panic(err)
+		_, err := toml.DecodeFile("~/.config/slackbot-rss/config.tml", &config)
+		if err != nil {
+			panic(err)
+		}
 	}
 	fp := gofeed.NewParser()
 	feed, _ := fp.ParseURL("http://b.hatena.ne.jp/hotentry/it.rss")
