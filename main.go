@@ -35,14 +35,28 @@ func main() {
 	}
 }
 
-func postNicoSearch() {
-	var config Config
-	_, err := toml.DecodeFile("config.tml", &config)
+// 存在確認ができたパス文字列を返す。
+// 全部ダメならnil
+func loadFiles(filepaths []string) string {
+	_, err := os.Stat(filepaths[0])
 	if err != nil {
-		_, err := toml.DecodeFile("~/.config/slackbot-rss/config.tml", &config)
-		if err != nil {
-			panic(err)
-		}
+		return loadFiles(filepaths[1:])
+	} else {
+		return filepaths[0]
+	}
+}
+
+var DEFAULT_LOAD_FILES []string = []string{
+	"config.tml",
+	"~/.config/slackbot-rss/config.tml",
+	"/etc/slackbot/config.tml"}
+
+func postNicoSearch() {
+
+	var config Config
+	_, err := toml.DecodeFile(loadFiles(DEFAULT_LOAD_FILES), &config)
+	if err != nil {
+		panic(err)
 	}
 	text := nicoSearch.GetNicoSearchResultText(config.Nicos.SearchUrl)
 
@@ -51,12 +65,9 @@ func postNicoSearch() {
 }
 func postHatenaRss() {
 	var config Config
-	_, err := toml.DecodeFile("config.tml", &config)
+	_, err := toml.DecodeFile(loadFiles(DEFAULT_LOAD_FILES), &config)
 	if err != nil {
-		_, err := toml.DecodeFile("~/.config/slackbot-rss/config.tml", &config)
-		if err != nil {
-			panic(err)
-		}
+		panic(err)
 	}
 	fp := gofeed.NewParser()
 	feed, _ := fp.ParseURL("http://b.hatena.ne.jp/hotentry/it.rss")
