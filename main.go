@@ -3,8 +3,10 @@ package main
 import (
 	"./nicoSearch"
 	"./sendSlack"
+	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/mmcdole/gofeed"
+	"os"
 )
 
 type Config struct {
@@ -19,7 +21,18 @@ type NicosConfig struct {
 }
 
 func main() {
-	// postNicoSearch()
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "nico":
+			postNicoSearch()
+		case "hatena":
+			postHatenaRss()
+		default:
+			fmt.Println("not found cmd")
+		}
+	} else {
+		fmt.Println("please input cmd")
+	}
 }
 
 func postNicoSearch() {
