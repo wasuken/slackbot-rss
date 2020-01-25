@@ -7,11 +7,14 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/mmcdole/gofeed"
 	"os"
+	"strings"
+	"time"
 )
 
 type Config struct {
 	Hooks HooksConfig
 	Nicos NicosConfig
+	Rss   RssConfig
 }
 type HooksConfig struct {
 	Url string
@@ -20,13 +23,17 @@ type NicosConfig struct {
 	SearchUrl string
 }
 
+type RssConfig struct {
+	UrlList []string
+}
+
 func main() {
 	if len(os.Args) > 1 {
 		switch os.Args[1] {
 		case "nico":
 			postNicoSearch()
-		case "hatena":
-			postHatenaRss()
+		case "rss":
+			postRss()
 		default:
 			fmt.Println("not found cmd")
 		}
@@ -60,21 +67,33 @@ func postNicoSearch() {
 	}
 	text := nicoSearch.GetNicoSearchResultText(config.Nicos.SearchUrl)
 
-	slack := &sendSlack.SlackMsg{Name: "Hook君", Text: text, Channel: "general", Url: config.Hooks.Url}
+	slack := &sendSlack.SlackMsg{Name: "Hook君", Text: text, Channel: "voiceroid", Url: config.Hooks.Url}
 	slack.PostToHookUrl()
 }
-func postHatenaRss() {
+func postRss() {
 	var config Config
 	_, err := toml.DecodeFile(loadFiles(DEFAULT_LOAD_FILES), &config)
 	if err != nil {
 		panic(err)
 	}
-	fp := gofeed.NewParser()
-	feed, _ := fp.ParseURL("http://b.hatena.ne.jp/hotentry/it.rss")
-	text := ""
-	for _, item := range feed.Items {
-		text += item.Title + "\n" + item.Link + "\n"
+	sep := 0
+	for _, url := range config.Rss.UrlList {
+		linkList := []string{}
+		text := ""
+		fp := gofeed.NewParser()
+		feed, _ := fp.ParseURL(url)
+		text += "## " + url + " ##\n"
+		for _, item := range feed.Items {
+			linkList = append(linkList, "<"+item.Link+"|"+item.Title+">")
+		}
+		sep = int(len(linkList) / 2)
+		text = strings.Join(linkList[0:sep], "\n")
+		slack := &sendSlack.SlackMsg{Name: "Hook君", Text: text, Channel: "news", Url: config.Hooks.Url}
+		slack.PostToHookUrl()
+
+		text = strings.Join(linkList[sep:], "\n")
+		slack = &sendSlack.SlackMsg{Name: "Hook君", Text: text, Channel: "news", Url: config.Hooks.Url}
+		slack.PostToHookUrl()
+		time.Sleep(time.Second * 5)
 	}
-	slack := &sendSlack.SlackMsg{Name: "Hook君", Text: text, Channel: "general", Url: config.Hooks.Url}
-	slack.PostToHookUrl()
 }

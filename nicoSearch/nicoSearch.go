@@ -43,7 +43,7 @@ func GetNicoSearchResultText(searchUrl string) string {
 	text := ""
 	for _, nr := range n.Data[0:10] {
 		url := "https://www.nicovideo.jp/watch/" + nr.ContentId
-		text += nr.Title + "\n" + url + "\n"
+		text += "<" + url + "|" + nr.Title + ">\n"
 	}
 	return text
 }
