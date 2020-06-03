@@ -1,2 +1,4 @@
 config.tml
 slackbot-rss
+go.mod
+go.sum
