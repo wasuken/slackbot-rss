@@ -3,16 +3,19 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/BurntSushi/toml"
-	"github.com/mmcdole/gofeed"
-	"github.com/wasuken/slackbot-rss/nicoSearch"
-	"github.com/wasuken/slackbot-rss/sendSlack"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
 	"time"
+	"unicode/utf8"
+
+	"slackbot-rss/nicoSearch"
+	"slackbot-rss/sendSlack"
+
+	"github.com/BurntSushi/toml"
+	"github.com/mmcdole/gofeed"
 )
 
 type Config struct {
@@ -107,6 +110,18 @@ func deeplTranslate(text, src, target string) string {
 	return result.Text
 }
 
+// アスキー文字率
+func asciiTextRate(s string) float64 {
+	s_len := utf8.RuneCountInString(s)
+	cnt := 0.0
+	for _, c := range s {
+		if c <= 122 {
+			cnt++
+		}
+	}
+	return cnt / float64(s_len)
+}
+
 func postRss() {
 	var config Config
 	_, err := toml.DecodeFile(loadFiles(DEFAULT_LOAD_FILES), &config)
@@ -121,7 +136,13 @@ func postRss() {
 		feed, _ := fp.ParseURL(url)
 		text += "## " + url + " ##\n"
 		for _, item := range feed.Items {
-			linkList = append(linkList, "<"+item.Link+"|"+deeplTranslate(item.Title, "en", "ja")+">")
+			t := item.Title
+			// ここで翻訳をいれるかどうか判定する。
+			if asciiTextRate(item.Title) > 0.6 {
+				t = deeplTranslate(item.Title, "en", "ja")
+			}
+
+			linkList = append(linkList, "<"+item.Link+"|"+t+">")
 		}
 		sep = int(len(linkList) / 2)
 		text = strings.Join(linkList[0:sep], "\n")
